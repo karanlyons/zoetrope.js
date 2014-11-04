@@ -1,0 +1,630 @@
+// Zoetrope Default Theme.
+
+$easeInOutSine: cubic-bezier(0.445, 0.05, 0.55, 0.95);
+$easeOutQuad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$easeInOutQuad: cubic-bezier(0.455, 0.03, 0.515, .955);
+
+@font-face {
+	font-family: 'zoetrope-modern-icons';
+	src: url('./zoetrope-modern-icons.eot');
+	src:
+		url('./zoetrope-modern-icons.eot') format('embedded-opentype'),
+		url('./zoetrope-modern-icons.woff') format('woff'),
+		url('./zoetrope-modern-icons.ttf') format('truetype'),
+		url('./zoetrope-modern-icons.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+$icon-play: '\e800';
+$icon-pause: '\e801';
+$icon-volume_0: '\e802';
+$icon-volume_1: '\e803';
+$icon-volume_2: '\e804';
+$icon-volume_3: '\e805';
+$icon-expand: '\e806';
+$icon-contract: '\e807';
+
+
+// Prevent element flashing when initializing zoetropes.
+video.zoetrope, audio.zoetrope { visibility: hidden; }
+video.zoetrope.mobile, audio.zoetrope.mobile { visibility: visible; }
+
+.zoetrope {
+	// Settings
+	
+	& {
+		// content will be ignored by the browser since this is not a psuedo
+		// element, but we can still access it as data in the DOM. Supplied as
+		// JSON, and overwrites default theme settings. Single quotes are not
+		// permitted, and double quotes inside of strings must be
+		// doubly backslashed.
+		content:
+			'{
+				"volume_steps": 4,
+				"timeline_start": "left",
+				"timeline_dimension": "width",
+				"volume_start": "bottom",
+				"volume_dimension": "height",
+				"window_flag_cursor": 1000,
+				"fullscreen_flag_cursor": 2500,
+				"zoetrope_template":
+					"
+					<div class=\\"zoetrope\\">
+						<div class=\\"container\\">
+							<div class=\\"poster\\">
+								<div class=\\"play-button\\"></div>
+								<div class=\\"throbber\\"></div>
+							</div>
+							<media></media>
+							<div class=\\"controls-wrapper\\">
+								<div class=\\"controls\\">
+									<div class=\\"playback-toggle\\"></div>
+									<div class=\\"time\\"></div>
+									<div class=\\"timeline\\">
+										<div class=\\"played\\"></div>
+										<div class=\\"buffered\\"></div>
+									</div>
+									<div class=\\"quality-toggle\\"></div>
+									<div class=\\"mute-toggle\\">
+										<div class=\\"volume\\">
+											<div class=\\"level\\"></div>
+										</div>
+									</div>
+									<div class=\\"fullscreen-toggle\\"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					"
+			}';
+	}
+	
+	
+	// Base: Reset
+	
+	&,
+	& *,
+	& *::before,
+	& *::after {
+		box-sizing: border-box;
+		backface-visibility: hidden;
+		perspective: 0;
+		margin: 0;
+		padding: 0;
+		background: transparent;
+	}
+	
+	& {
+		cursor: default; // Keep the cursor looking normal.
+		-webkit-touch-callout: none; // Prevent selecting the media element as text.
+		-webkit-user-select: none;
+		 -khtml-user-select: none;
+		   -moz-user-select: none;
+		    -ms-user-select: none;
+		        user-select: none;
+	}
+	
+	// If that fails, try to hide that it happened.
+	&::selection,
+	&::-moz-selection {
+		background: transparent;
+	}
+	
+	
+	// Base: Layout
+	
+	&,
+	.container,
+	.poster,
+	.controls-wrapper,
+	video,
+	audio {
+		display: block;
+		position: relative;
+		width: 100%;
+		margin: 0 auto;
+		transition: none;
+	}
+	
+	// Everything is layered on top of each other using absolute positioning
+	// when necessary.
+	.poster { z-index: 4; }
+	.controls-wrapper { z-index: 3; }
+	
+	// We have two media elements that we switch between when sources change,
+	// so playback stays smooth. We also want to keep the container from
+	// resizing when we switch, so we need to toggle their positions and
+	// z-indexes at *exactly* the same time.
+	video, audio { z-index: 1; }
+	
+	&.using-1 video:nth-child(2n + 0), &.using-1 audio:nth-child(2n + 0),
+	&.using-2 video:nth-child(2n + 1), &.using-2 audio:nth-child(2n + 1) {
+		z-index: 2;
+	}
+	
+	&.using-1 video:nth-child(2n + 1), &.using-1 audio:nth-child(2n + 1),
+	&.using-2 video:nth-child(2n + 0), &.using-2 audio:nth-child(2n + 0) {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+	
+	
+	// Base: State Changes
+	
+	video, audio {
+		opacity: 1;
+		transition: opacity 0.5s $easeInOutSine;
+	}
+	
+	&.using-1 video:nth-child(2n + 1), &.using-1 audio:nth-child(2n + 1)
+	&.using-2 video:nth-child(2n + 0), &.using-2 audio:nth-child(2n + 0) {
+		opacity: 0;
+		transition: opacity 0.5s $easeInOutSine 1s;
+	}
+	
+	
+	// Poster
+	
+	.poster {
+		// Poster: Layout
+		
+		& {
+			position: absolute;
+			top: 0;
+			left: 0;
+			height: 100%;
+			width: 100%;
+			background-size: 100%;
+			text-align: center;
+			pointer-events: auto;
+			opacity: 1;
+			transition: opacity 0.5s $easeInOutSine;
+		}
+		
+		// This is a hack to get vertical centering when element dimensions
+		// are unknown.
+		&::before {
+			content: '';
+			display: inline-block;
+			height: 100%;
+			vertical-align: middle;
+		}
+		
+		.play-button,
+		.throbber {
+			display: inline-block;
+			position: relative;
+			height: 30px;
+			width: 30px;
+			vertical-align: middle;
+			font-family: 'zoetrope-modern-icons'; // We use an icon font for all the graphics.
+			font-size: 30px;
+			line-height: 30px;
+			color: #fff;
+			text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+			opacity: 1;
+			transform: scale(1);
+			transition:
+				opacity 1s $easeInOutSine,
+				transform 0.5s $easeInOutQuad;
+			z-index: 0;
+		}
+		
+		.play-button {
+			& {
+				margin-left: 3px;
+				cursor: pointer; // Make it look clickable, because it is.
+			}
+			
+			// We use psuedo elements everywhere, so that the design can be
+			// completely seperated from the logic.
+			&::before {
+				content: $icon-play;
+			}
+			
+			&:hover {
+				transform: scale(1.125);
+			}
+		}
+		
+		.throbber {
+			& {
+				margin-left: -33px;
+				opacity: 0;
+				z-index: -1;
+			}
+			
+			&::before,
+			&::after {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				height: 30px;
+				width: 30px;
+				border: 2px solid #fff;
+				border-radius: 50%;
+				opacity: 1;
+				animation: zoetrope-modern-throb 4s infinite $easeInOutSine;
+				animation-play-state: paused;
+			}
+			
+			&::after {
+				animation-delay: -2s;
+			}
+			
+			@keyframes zoetrope-modern-throb {
+				0%, 100% {
+					opacity: 0;
+					transform: scale(0);
+				}
+				50% {
+					opacity: 1;
+					transform: scale(1);
+				}
+			}
+		}
+	}
+	
+	
+	// Poster: State Changes
+	
+	// When we're loading, show the throbber instead of the play button.
+	&.state-loading .poster {
+		.play-button {
+			opacity: 0;
+			transform: scale(0);
+			cursor: default; // Don't make it look clickable, because it no longer is.
+		}
+		
+		.throbber {
+			& {
+				opacity: 1;
+			}
+			
+			&::before,
+			&::after {
+				animation-play-state: running;
+			}
+		}
+	}
+	
+	// Whenever we're not stopped or loading, hide the poster.
+	&.state-playing,
+	&.state-paused,
+	&.state-buffering {
+		& .poster {
+			& {
+				opacity: 0;
+				pointer-events: none; // Don't receive events: we're hidden.
+			}
+			
+			& .play-button {
+				opacity: 0;
+				transform: scale(0);
+			}
+		}
+	}
+	
+	
+	// Controls
+	
+	// This wrapper is necessary in order to horizontally center .controls,
+	// which we also want to be absolutely positioned at the bottom of the
+	// media. Relative positioning would alter the container's height to be
+	// larger than the media, which we don't want.
+	// (I am incredibly annoyed that this wrapper has to exist at all.)
+	.controls-wrapper {
+		position: absolute;
+		bottom: 10px;
+		height: 35px;
+		width: 100%;
+	}
+	
+	.controls {
+		// Controls: Base: Layout
+		
+		& {
+			display: block;
+			table-layout: fixed;
+			position: static;
+			height: 35px;
+			min-width: 400px;
+			width: 92%;
+			width: calc(100% - 50px);
+			max-width: 700px;
+			margin: 0 auto;
+			border-collapse: seperate;
+			border-spacing: 5px;
+			vertical-align: middle;
+			font-family: 'zoetrope-modern-icons';
+			font-size: 15px;
+			line-height: 15px;
+			color: #fff;
+			text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+			pointer-events: auto;
+			opacity: 0;
+			transition: opacity 0.25s $easeOutQuad 0.5s;
+		}
+		
+		&:hover,
+		&:active {
+			opacity: 1;
+			transition: opacity 0.5s $easeOutQuad;
+		}
+		
+		// Webkit has a weird border collapse issue during reflows affecting
+		// the first element in a table. So we add in this empty 0x0 psuedo
+		// element to take the hit for us.
+		&::before {
+			content: '';
+			display: table-cell;
+			position: relative;
+			min-width: 0px;
+			max-width: 0px;
+		}
+		
+		& > div {
+			& {
+				display: table-cell;
+				position: relative;
+				min-height: 25px;
+				max-height: 25px;
+				min-width: 25px;
+				max-width: 25px;
+				text-align: center;
+				vertical-align: middle;
+			}
+			
+			&::before,
+			&::after {
+				display: block;
+				height: 25px;
+				width: 100%;
+				padding: 5px;
+			}
+			
+			&,
+			&:hover,
+			&:active, {
+				cursor: pointer;
+			}
+		}
+		
+		// Controls: Time: Layout
+		
+		.time {
+			& {
+				min-width: 41px; // Just large enough for '-00:00' (the widest string with this typeface) to fit.
+				max-width: 41px;
+				font-family: HelveticaNeue, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+				font-weight: 700;
+				font-size: 10px;
+				line-height: 17.5px;
+				text-align: right;
+			}
+			
+			&::before {
+				content: attr(data-time);
+			}
+			
+			&:hover::before {
+				content: '-' attr(data-remaining);
+			}
+			
+			&,
+			&:hover,
+			&:active, {
+				cursor: default;
+			}
+		}
+		
+		// Controls: Timeline: Layout
+		
+		.timeline {
+			& {
+				width: 100%;
+			}
+			
+			&::before, .buffered, .played {
+				display: block;
+				position: absolute;
+				top: 11px;
+				height: 3px;
+				margin: 0;
+				padding: 0;
+				border-radius: 1.5px;
+				z-index: 0;
+			}
+			
+			// The background for our timeline.
+			&::before {
+				content: '';
+				width: 100%;
+				background: rgba(255, 255, 255, 0.25);
+				box-shadow: 0 1px 1px rgba(0, 0, 0, 0.375);
+			}
+			
+			// We can't use a pseudo element here, becuase zoetrope needs to be
+			// able to alter the CSS properties for width, left, etc.
+			// Whenever we finally get support for attr() anywhere, we'll be
+			// able to use psuedo elements here as well, to make everything
+			// nice and clean.
+			.buffered {
+				background: rgba(255, 255, 255, 0.25);
+				z-index: 1;
+			}
+			
+			.played {
+				background: #fff;
+				z-index: 2;
+			}
+		}
+		
+		// Controls: Quality Toggle: Layout
+		
+		.quality-toggle {
+			& {
+				font-family: HelveticaNeue, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+				font-weight: 700;
+				font-size: 10px;
+				line-height: 17.5px;
+				text-transform: uppercase;
+			}
+			
+			&::before {
+				z-index: 0;
+			}
+			
+			// We have a second psuedo element layered on top of the first so
+			// that we can use background-clip without the text-shadow
+			// showing through. This nice effect is sadly webkit only,
+			// but we'll fallback gracefully.
+			&::after {
+				/* autoprefixer: off */
+				position: absolute;
+				top: 0;
+				left: 0;
+				background: -webkit-linear-gradient(
+					45deg,
+					#fff 0%, #fff 6.25%,
+					#929292 6.25%, #929292 12.5%,
+					#fff 12.5%, #fff 18.75%,
+					#929292 18.75%, #929292 25%,
+					#fff 25%, #fff 31.25%,
+					#929292 31.25%, #929292 37.5%,
+					#fff 37.5%, #fff 43.75%,
+					#929292 43.75%, #929292 50%,
+					#fff 50%, #fff 56.25%,
+					#929292 56.25%, #929292 62.5%,
+					#fff 62.5%, #fff 68.75%,
+					#929292 68.75%, #929292 75%,
+					#fff 75%, #fff 81.25%,
+					#929292 81.25%, #929292 87.5%,
+					#fff 87.5%, #fff 93.75%,
+					#929292 93.75%, #929292 100%
+				);
+				-webkit-background-clip: text;
+				-webkit-animation: zoetrope-modern-switching 2s linear infinite;
+				-webkit-text-fill-color: transparent;
+				color: #929292; // Fallback for non-webkit browsers.
+				text-shadow: none;
+				opacity: 1;
+				z-index: 1;
+			}
+			
+			@keyframes zoetrope-modern-switching {
+				0% {
+					background-position: 0 0;
+				}
+				100% {
+					background-position: 25px;
+				}
+			}
+		}
+		
+		// Controls: Mute Toggle & Volume: Layout
+		.mute-toggle {
+			& .volume {
+				& {
+					display: block;
+					position: absolute;
+					bottom: 25px;
+					height: 0px;
+					width: 25px;
+					opacity: 0;
+					animation: zoetrope-modern-volume 0.25s reverse $easeOutQuad;
+				}
+				
+				&::before, & .level {
+					display: block;
+					position: absolute;
+					bottom: 0;
+					left: 11px;
+					border-radius: 1.5px;
+					width: 3px;
+				}
+				
+				&::before {
+					content: '';
+					height: 100%;
+					width: 3px;
+					background: rgba(255, 255, 255, 0.25);
+					box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+				}
+				
+				& .level {
+					background: rgba(255, 255, 255, 1);
+				}
+			}
+			
+			&:hover .volume,
+			& .volume:hover,
+			& .volume:active {
+				height: 50px;
+				opacity: 1;
+				animation-direction: normal;
+			}
+			
+			@keyframes zoetrope-modern-volume {
+				0% {
+					height: 0px;
+					opacity: 0;
+				}
+				6% {
+					height: 3px;
+					opacity: 1;
+				}
+				100% {
+					height: 50px;
+					opacity: 1;
+				}
+			}
+		}
+	}
+	
+	
+	// Controls: State Changes
+	
+	// Show the controls whenever the user moves their cursor, the media is
+	// paused, or the media is buffering.
+	&.cursor-true .controls,
+	&.state-paused .controls,
+	&.state-buffering .controls, {
+		opacity: 1;
+		transition: opacity 0.5s $easeOutQuad;
+	}
+	
+	
+	// Controls: Playback Toggle: State Changes
+	
+	&.state-playing .playback-toggle::before,
+	&.state-buffering .playback-toggle::before { content: $icon-pause; }
+	&.state-paused .playback-toggle::before { content: $icon-play; }
+	
+	
+	// Controls: Quality Toggle: State Changes
+	
+	&.switching-false .quality-toggle::after { opacity: 0; }
+	& .controls .quality-toggle::before,
+	& .controls .quality-toggle::after {
+		content: attr(data-intended); // The quality the user *wants* to play.
+	}
+	
+	
+	// Controls: Volume: State Changes
+	
+	&.volume-0 .mute-toggle::before { content: $icon-volume_0; }
+	&.volume-1 .mute-toggle::before { content: $icon-volume_1; }
+	&.volume-2 .mute-toggle::before { content: $icon-volume_2; }
+	&.volume-3 .mute-toggle::before { content: $icon-volume_3; }
+	
+	
+	// Controls: Fullscreen Toggle: State Changess
+	
+	&.fullscreen-unsupported .fullscreen-toggle { display: none; }
+	&.fullscreen-false .fullscreen-toggle::before { content: $icon-expand; }
+	&.fullscreen-true .fullscreen-toggle::before { content: $icon-contract; }
+}
